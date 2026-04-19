@@ -5,46 +5,64 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MangaKaizoku</title>
   <meta name="description" content="Leia seus mangas favoritos — MangaKaizoku" />
-
-  <!-- Preload critico apenas -->
   <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-
-  <!-- Fontes carregam de forma NAO bloqueante (print -> all) -->
   <link rel="stylesheet" href="assets/css/style.css" />
-
-  <!-- Carrega fontes assincronamente para nao bloquear render -->
   <script>
-    (function() {
-      var link = document.createElement('link');
-      link.rel = 'stylesheet';
-      link.href = 'https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Shippori+Mincho:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap';
-      link.media = 'print';
-      link.onload = function() { this.media = 'all'; };
-      document.head.appendChild(link);
+    (function(){
+      var l=document.createElement('link');
+      l.rel='stylesheet';
+      l.href='https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Shippori+Mincho:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap';
+      l.media='print';
+      l.onload=function(){this.media='all';};
+      document.head.appendChild(l);
     })();
   </script>
 </head>
 <body>
+
+  <!-- ===== TOPBAR ===== -->
   <header class="topbar" id="topbar">
     <div class="topbar-inner">
-      <a href="#/" class="logo" aria-label="MangaKaizoku Home">
-        <svg class="logo-mark" width="28" height="28" viewBox="0 0 28 28" fill="none">
-          <path d="M14 2L26 8V20L14 26L2 20V8L14 2Z" stroke="var(--color-gold)" stroke-width="1.5" fill="none"/>
-          <path d="M14 6L22 10V18L14 22L6 18V10L14 6Z" fill="var(--color-primary)" opacity="0.3"/>
-          <path d="M10 14H18M14 10V18" stroke="var(--color-gold)" stroke-width="1.5" stroke-linecap="round"/>
+
+      <!-- Logo -->
+      <a href="#/" class="logo" aria-label="MangaKaizoku">
+        <!-- Navio pirata SVG -->
+        <svg class="logo-ship" width="36" height="28" viewBox="0 0 36 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- casco -->
+          <path d="M4 18 Q18 24 32 18 L30 22 Q18 28 6 22 Z" fill="var(--color-primary)"/>
+          <!-- deck -->
+          <rect x="6" y="15" width="24" height="3" rx="1" fill="var(--color-gold)"/>
+          <!-- mastro principal -->
+          <line x1="18" y1="3" x2="18" y2="16" stroke="var(--color-gold)" stroke-width="1.5"/>
+          <!-- mastro de proa -->
+          <line x1="10" y1="8" x2="10" y2="16" stroke="var(--color-gold)" stroke-width="1.2"/>
+          <!-- vela principal -->
+          <path d="M18 4 L28 8 L18 14 Z" fill="var(--color-text)" opacity="0.9"/>
+          <!-- vela de proa -->
+          <path d="M10 9 L17 11 L10 15 Z" fill="var(--color-text)" opacity="0.7"/>
+          <!-- bandeira -->
+          <path d="M18 3 L18 7 L22 5 Z" fill="var(--color-primary)"/>
+          <!-- ondas -->
+          <path d="M1 22 Q4 20 7 22 Q10 24 13 22 Q16 20 19 22 Q22 24 25 22 Q28 20 31 22 Q34 24 35 22" stroke="var(--color-gold)" stroke-width="1" fill="none" opacity="0.6"/>
         </svg>
-        <span class="logo-text">Manga<span class="logo-accent">Kaizoku</span></span>
+        <div class="logo-text-wrap">
+          <span class="logo-text">Manga<span class="logo-accent">Kaizoku</span></span>
+          <span class="logo-sub">海賊漫画</span>
+        </div>
       </a>
-      <nav class="topbar-nav">
+
+      <!-- Nav desktop -->
+      <nav class="topbar-nav" role="navigation">
         <a href="#/" class="nav-link" data-route="home">Home</a>
         <a href="#/search" class="nav-link" data-route="search">Buscar</a>
         <a href="#/favorites" class="nav-link" data-route="favorites">Favoritos</a>
         <a href="#/history" class="nav-link" data-route="history">Historico</a>
       </nav>
+
       <div class="topbar-actions">
         <button class="icon-btn theme-toggle" id="themeToggle" aria-label="Alternar tema">
-          <svg id="themeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg id="themeIcon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
           </svg>
         </button>
@@ -52,25 +70,58 @@
     </div>
   </header>
 
+  <!-- ===== MAIN ===== -->
   <main class="main-content" id="app">
     <div class="page-loading"><div class="spinner"></div></div>
   </main>
 
-  <nav class="bottombar" id="bottombar">
+  <!-- ===== BOTTOM NAV MOBILE ===== -->
+  <nav class="bottombar" id="bottombar" role="navigation" aria-label="Navegacao principal">
     <a href="#/" class="bottom-link" data-route="home">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
+      <span class="bottom-icon-wrap">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+          <polyline points="9,22 9,12 15,12 15,22"/>
+        </svg>
+      </span>
       <span class="bottom-label">Home</span>
     </a>
     <a href="#/search" class="bottom-link" data-route="search">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <span class="bottom-icon-wrap">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+      </span>
       <span class="bottom-label">Buscar</span>
     </a>
+    <a href="#/" class="bottom-link bottom-link--center" data-route="home" aria-label="Inicio">
+      <!-- Navio centralizado decorativo -->
+      <span class="bottom-ship-wrap">
+        <svg width="28" height="22" viewBox="0 0 36 28" fill="none">
+          <path d="M4 18 Q18 24 32 18 L30 22 Q18 28 6 22 Z" fill="currentColor" opacity="0.9"/>
+          <rect x="6" y="15" width="24" height="2.5" rx="1" fill="currentColor" opacity="0.7"/>
+          <line x1="18" y1="3" x2="18" y2="16" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M18 4 L28 8 L18 14 Z" fill="currentColor" opacity="0.8"/>
+          <path d="M18 3 L18 6 L21 4.5 Z" fill="currentColor"/>
+        </svg>
+      </span>
+    </a>
     <a href="#/favorites" class="bottom-link" data-route="favorites">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+      <span class="bottom-icon-wrap">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+        </svg>
+      </span>
       <span class="bottom-label">Favoritos</span>
     </a>
     <a href="#/history" class="bottom-link" data-route="history">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+      <span class="bottom-icon-wrap">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+          <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+        </svg>
+      </span>
       <span class="bottom-label">Historico</span>
     </a>
   </nav>

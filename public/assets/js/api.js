@@ -1,77 +1,83 @@
-/* =====================================================
-   MangaWeb — api.js
-   MangaDex API — chamada direta (CORS nativo para browsers)
-   ===================================================== */
-
+/* MangaKaizoku — api.js */
 const API = (() => {
-  const BASE = 'https://api.mangadex.org';
   const IMG_BASE = 'https://uploads.mangadex.org';
 
-  // ── Request helper ───────────────────────────────────
-  // Constrói URL manualmente para suportar parâmetros repetidos
-  // como includes[], translatedLanguage[], contentRating[] corretamente
-  async function request(path, params = {}) {
-    const base = BASE + path;
-    const parts = [];
+  // Detecta ambiente automaticamente:
+  // - localhost/192.168.x.x → proxy Node local :3001
+  // - qualquer outro (Vercel, produção) → Vercel serverless /api/proxy
+  function getProxyBase() {
+    const h = location.hostname;
+    const isLocal = h === 'localhost' || h.startsWith('192.168.') || h.startsWith('10.') || h === '127.0.0.1';
+    return isLocal ? 'http://localhost:3001/api' : '/api/proxy';
+  }
 
-    Object.entries(params).forEach(([k, v]) => {
+  // Monta URL sem encodeURIComponent nas chaves — preserva [] literalmente
+  function buildUrl(path, params) {
+    const parts = [];
+    Object.entries(params || {}).forEach(([k, v]) => {
       if (Array.isArray(v)) {
-        // Garante que arrays viram param[]=val1&param[]=val2
-        const key = k.endsWith('[]') ? k : `${k}[]`;
-        v.forEach(val => parts.push(`${encodeURIComponent(key)}=${encodeURIComponent(val)}`));
+        const key = k.endsWith('[]') ? k : k + '[]';
+        v.forEach(val => parts.push(key + '=' + encodeURIComponent(val)));
       } else if (v !== undefined && v !== null && v !== '') {
-        parts.push(`${encodeURIComponent(k)}=${encodeURIComponent(v)}`);
+        parts.push(k + '=' + encodeURIComponent(v));
       }
     });
+    return path + (parts.length ? '?' + parts.join('&') : '');
+  }
 
-    const url = parts.length ? `${base}?${parts.join('&')}` : base;
+  async function request(path, params) {
+    const base = getProxyBase();
+    const isLocal = base.includes('3001');
+    let url;
 
-    const res = await fetch(url, {
-      headers: { 'Accept': 'application/json' }
-    });
-    if (!res.ok) throw new Error(`API Error: ${res.status}`);
+    if (isLocal) {
+      // proxy local: chama /api/manga?...
+      url = base + buildUrl(path, params);
+    } else {
+      // Vercel function: /api/proxy?path=/manga&limit=12&...
+      const qp = { path };
+      // Adiciona todos os params ao querystring
+      const parts = ['path=' + encodeURIComponent(path)];
+      Object.entries(params || {}).forEach(([k, v]) => {
+        if (Array.isArray(v)) {
+          const key = k.endsWith('[]') ? k : k + '[]';
+          v.forEach(val => parts.push(key + '=' + encodeURIComponent(val)));
+        } else if (v !== undefined && v !== null && v !== '') {
+          parts.push(k + '=' + encodeURIComponent(v));
+        }
+      });
+      url = base + '?' + parts.join('&');
+    }
+
+    const res = await fetch(url, { headers: { Accept: 'application/json' } });
+    if (!res.ok) throw new Error('API ' + res.status);
     return res.json();
   }
 
-  // ── Cover URL ────────────────────────────────────────
-  function coverUrl(mangaId, filename, size = 256) {
+  function coverUrl(mangaId, filename) {
     if (!filename) return '';
-    return `${IMG_BASE}/covers/${mangaId}/${filename}.${size}.jpg`;
+    return IMG_BASE + '/covers/' + mangaId + '/' + filename + '.256.jpg';
   }
 
-  // ── Extrair capa do relationship incluído ─────────────
-  // Quando passamos includes[]=cover_art, a MangaDex já retorna
-  // os attributes da capa dentro do relationship — sem segunda chamada
   function extractCoverFilename(manga) {
-    const rels = manga.relationships || [];
-    const cov = rels.find(r => r.type === 'cover_art');
-    if (!cov) return null;
-    if (cov.attributes && cov.attributes.fileName) return cov.attributes.fileName;
-    return null;
-  }
-
-  function extractCoverId(manga) {
-    const rels = manga.relationships || [];
-    const cov = rels.find(r => r.type === 'cover_art');
-    return cov ? cov.id : null;
+    const cov = (manga.relationships || []).find(r => r.type === 'cover_art');
+    return (cov && cov.attributes && cov.attributes.fileName) ? cov.attributes.fileName : null;
   }
 
   function extractAuthor(manga) {
-    const rels = manga.relationships || [];
-    const auth = rels.find(r => r.type === 'author');
-    return (auth && auth.attributes && auth.attributes.name) ? auth.attributes.name : '';
+    const a = (manga.relationships || []).find(r => r.type === 'author');
+    return (a && a.attributes && a.attributes.name) ? a.attributes.name : '';
   }
 
   function extractTitle(manga) {
     const t = manga.attributes.title || {};
-    const alt = manga.attributes.altTitles || [];
-    const fromTitle = t['pt-br'] || t['pt'] || t['en'] || Object.values(t)[0];
-    if (fromTitle) return fromTitle;
-    for (const altMap of alt) {
-      const v = altMap['pt-br'] || altMap['pt'] || altMap['en'];
-      if (v) return v;
+    const v = t['pt-br'] || t['pt'] || t['en'] || Object.values(t)[0];
+    if (v) return v;
+    for (const alt of (manga.attributes.altTitles || [])) {
+      const w = alt['pt-br'] || alt['pt'] || alt['en'];
+      if (w) return w;
     }
-    return 'Sem título';
+    return 'Sem titulo';
   }
 
   function extractDesc(manga) {
@@ -86,9 +92,9 @@ const API = (() => {
     }).filter(Boolean);
   }
 
-  // ── Normalizar manga ──────────────────────────────────
   function normalizeManga(manga) {
     const filename = extractCoverFilename(manga);
+    const covRel = (manga.relationships || []).find(r => r.type === 'cover_art');
     return {
       id: manga.id,
       title: extractTitle(manga),
@@ -97,81 +103,48 @@ const API = (() => {
       tags: extractTags(manga),
       status: manga.attributes.status || '',
       year: manga.attributes.year || null,
-      coverId: extractCoverId(manga),
+      coverId: covRel ? covRel.id : null,
       coverFilename: filename,
-      coverUrl: filename ? coverUrl(manga.id, filename, 256) : '',
+      coverUrl: filename ? coverUrl(manga.id, filename) : '',
     };
   }
 
-  // ── Parâmetros padrão ─────────────────────────────────
-  const DEFAULT_INCLUDES = ['cover_art', 'author'];
-  const DEFAULT_RATINGS  = ['safe', 'suggestive'];
+  const INC = ['cover_art', 'author'];
+  const RAT = ['safe', 'suggestive'];
 
-  // ── Lista genérica ────────────────────────────────────
-  async function getMangaList(extraParams = {}) {
-    const data = await request('/manga', {
-      limit: 20,
-      includes: DEFAULT_INCLUDES,
-      contentRating: DEFAULT_RATINGS,
-      ...extraParams,
-    });
-    return {
-      data: (data.data || []).map(normalizeManga),
-      total: data.total || 0,
-      offset: data.offset || 0,
-    };
+  async function getMangaList(extra) {
+    const data = await request('/manga', Object.assign({ limit: 20, 'includes[]': INC, 'contentRating[]': RAT }, extra || {}));
+    return { data: (data.data || []).map(normalizeManga), total: data.total || 0, offset: data.offset || 0 };
   }
 
-  function getPopular(limit = 12) {
-    return getMangaList({ limit, 'order[followedCount]': 'desc' });
-  }
-
-  function getRecentlyUpdated(limit = 12) {
-    return getMangaList({ limit, 'order[latestUploadedChapter]': 'desc' });
-  }
-
-  function getTopRated(limit = 12) {
-    return getMangaList({ limit, 'order[rating]': 'desc' });
-  }
-
-  function searchManga(query, offset = 0) {
-    return getMangaList({ title: query, limit: 20, offset, 'order[relevance]': 'desc' });
-  }
+  function getPopular(n)         { return getMangaList({ limit: n || 12, 'order[followedCount]': 'desc' }); }
+  function getRecentlyUpdated(n) { return getMangaList({ limit: n || 12, 'order[latestUploadedChapter]': 'desc' }); }
+  function getTopRated(n)        { return getMangaList({ limit: n || 12, 'order[rating]': 'desc' }); }
+  function searchManga(q, off)   { return getMangaList({ title: q, limit: 20, offset: off || 0, 'order[relevance]': 'desc' }); }
 
   async function getMangaDetail(id) {
-    const data = await request(`/manga/${id}`, {
-      includes: ['cover_art', 'author', 'artist'],
-    });
+    const data = await request('/manga/' + id, { 'includes[]': ['cover_art', 'author', 'artist'] });
     return normalizeManga(data.data);
   }
 
-  // ── Idiomas disponíveis ───────────────────────────────
   async function getAvailableLanguages(mangaId) {
     try {
       const data = await request('/chapter', {
-        manga: mangaId,
-        limit: 100,
-        'order[chapter]': 'asc',
-        contentRating: ['safe', 'suggestive', 'erotica', 'pornographic'],
+        manga: mangaId, limit: 100, 'order[chapter]': 'asc',
+        'contentRating[]': ['safe', 'suggestive', 'erotica', 'pornographic'],
       });
-      const langs = [...new Set(
-        (data.data || []).map(c => c.attributes.translatedLanguage).filter(Boolean)
-      )];
+      const langs = [...new Set((data.data || []).map(c => c.attributes.translatedLanguage).filter(Boolean))];
       return langs.length ? langs : ['en'];
-    } catch {
-      return ['en'];
-    }
+    } catch (_) { return ['en']; }
   }
 
-  // ── Capítulos ─────────────────────────────────────────
-  async function getChapters(mangaId, lang = 'pt-br', offset = 0) {
+  async function getChapters(mangaId, lang, offset) {
     const data = await request('/chapter', {
       manga: mangaId,
-      translatedLanguage: [lang],
+      'translatedLanguage[]': [lang || 'pt-br'],
       'order[chapter]': 'desc',
-      limit: 100,
-      offset,
-      contentRating: ['safe', 'suggestive', 'erotica', 'pornographic'],
+      limit: 100, offset: offset || 0,
+      'contentRating[]': ['safe', 'suggestive', 'erotica', 'pornographic'],
     });
     return {
       data: (data.data || []).map(ch => ({
@@ -181,7 +154,6 @@ const API = (() => {
         lang: ch.attributes.translatedLanguage,
         pages: ch.attributes.pages,
         publishAt: ch.attributes.publishAt,
-        // Obras de plataformas externas (Manga Plus, etc.) têm externalUrl
         externalUrl: ch.attributes.externalUrl || null,
         isExternal: !!ch.attributes.externalUrl,
       })),
@@ -189,25 +161,13 @@ const API = (() => {
     };
   }
 
-  // ── Páginas do capítulo ───────────────────────────────
   async function getChapterPages(chapterId) {
-    const data = await request(`/at-home/server/${chapterId}`);
+    const data = await request('/at-home/server/' + chapterId);
     const { baseUrl, chapter } = data;
-    const { hash, data: pages } = chapter;
-    return pages.map(p => `${baseUrl}/data/${hash}/${p}`);
+    return chapter.data.map(p => baseUrl + '/data/' + chapter.hash + '/' + p);
   }
 
-  return {
-    getMangaList,
-    getPopular,
-    getRecentlyUpdated,
-    getTopRated,
-    searchManga,
-    getMangaDetail,
-    getAvailableLanguages,
-    getChapters,
-    getChapterPages,
-    coverUrl,
-    normalizeManga,
-  };
+  return { getMangaList, getPopular, getRecentlyUpdated, getTopRated,
+           searchManga, getMangaDetail, getAvailableLanguages,
+           getChapters, getChapterPages, coverUrl, normalizeManga };
 })();
