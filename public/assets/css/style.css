@@ -825,3 +825,19 @@ function initBannerParticles() {
   }
 }
 document.addEventListener('DOMContentLoaded', initBannerParticles);
+
+/* ===== MOBILE FIXES ===== */
+@media (max-width: 480px) {
+  .home-banner { height: clamp(200px, 60vw, 280px); margin: -28px -20px 0; }
+  .banner-title { font-size: 22px; }
+  .banner-desc { font-size: 12px; display: none; }
+  .banner-content { bottom: 16px; left: 16px; right: 16px; }
+  .banner-eyebrow { font-size: 9px; margin-bottom: 6px; }
+  .logo-name { font-size: 15px; }
+  .logo-sub { font-size: 8px; letter-spacing: 2px; }
+  .topbar-inner { padding: 0 12px; gap: 10px; }
+}
+@media (max-width: 360px) {
+  .banner-title { font-size: 18px; }
+  .logo-name { font-size: 13px; }
+}

@@ -47,14 +47,6 @@ async function renderHome() {
       </div>
     </div>
 
-    <div class="hero">
-      <div class="hero-inner">
-        <div class="hero-eyebrow">Piratas &amp; Samurais</div>
-        <h1 class="hero-title">Sua tripulacao de<br><span>mangas favoritos</span></h1>
-        <p class="hero-sub">Explore milhares de obras. Do shonen ao seinen, do josei ao kodomomuke — navegue sem limites.</p>
-      </div>
-    </div>
-
     <div class="home-section">
       <div class="section-header">
         <h2 class="section-title">Populares</h2>
