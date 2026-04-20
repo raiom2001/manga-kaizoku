@@ -174,7 +174,7 @@ async function renderMangaDetail({ id }) {
       <div class="detail-hero">
         <div class="detail-cover">
           <img src="${manga.coverUrl}" alt="${manga.title}" loading="lazy" width="175" height="263"
-            onerror="this.style.display='none'" />
+            referrerpolicy="no-referrer" onerror="this.style.display='none'" />
         </div>
         <div class="detail-info">
           <h1 class="detail-title">${manga.title}</h1>
@@ -386,7 +386,7 @@ function renderHistory() {
           data-manga-title="${encodeURIComponent(h.mangaTitle)}" role="button" tabindex="0">
           <div class="history-thumb">
             <img src="${h.coverUrl || ''}" alt="${h.mangaTitle}" loading="lazy" width="46" height="64"
-              onerror="this.style.display='none'" />
+              referrerpolicy="no-referrer" onerror="this.style.display='none'" />
           </div>
           <div class="history-info">
             <div class="history-manga-title">${h.mangaTitle}</div>

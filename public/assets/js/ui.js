@@ -42,6 +42,7 @@ const UI = (() => {
     const hasCover = !!manga.coverUrl;
     const coverHtml = hasCover
       ? `<img src="${manga.coverUrl}" alt="${manga.title}" loading="lazy" width="256" height="380"
+           referrerpolicy="no-referrer"
            onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" />
          <div class="card-cover-placeholder" style="display:none;">${SVG.book}</div>`
       : `<div class="card-cover-placeholder">${SVG.book}</div>`;

@@ -2,17 +2,14 @@
 const API = (() => {
   const IMG_BASE = 'https://uploads.mangadex.org';
 
-  // Detecta ambiente automaticamente:
-  // - localhost/192.168.x.x → proxy Node local :3001
-  // - qualquer outro (Vercel, produção) → Vercel serverless /api/proxy
   function getProxyBase() {
     const h = location.hostname;
     const isLocal = h === 'localhost' || h.startsWith('192.168.') || h.startsWith('10.') || h === '127.0.0.1';
     return isLocal ? 'http://localhost:3001/api' : '/api/proxy';
   }
 
-  // Monta URL sem encodeURIComponent nas chaves — preserva [] literalmente
-  function buildUrl(path, params) {
+  // Monta querystring SEM encodar as chaves — preserva [] literalmente
+  function buildQs(params) {
     const parts = [];
     Object.entries(params || {}).forEach(([k, v]) => {
       if (Array.isArray(v)) {
@@ -22,33 +19,16 @@ const API = (() => {
         parts.push(k + '=' + encodeURIComponent(v));
       }
     });
-    return path + (parts.length ? '?' + parts.join('&') : '');
+    return parts.join('&');
   }
 
   async function request(path, params) {
     const base = getProxyBase();
-    const isLocal = base.includes('3001');
-    let url;
-
-    if (isLocal) {
-      // proxy local: chama /api/manga?...
-      url = base + buildUrl(path, params);
-    } else {
-      // Vercel function: /api/proxy?path=/manga&limit=12&...
-      const qp = { path };
-      // Adiciona todos os params ao querystring
-      const parts = ['path=' + encodeURIComponent(path)];
-      Object.entries(params || {}).forEach(([k, v]) => {
-        if (Array.isArray(v)) {
-          const key = k.endsWith('[]') ? k : k + '[]';
-          v.forEach(val => parts.push(key + '=' + encodeURIComponent(val)));
-        } else if (v !== undefined && v !== null && v !== '') {
-          parts.push(k + '=' + encodeURIComponent(v));
-        }
-      });
-      url = base + '?' + parts.join('&');
-    }
-
+    // Tanto local quanto Vercel: base + path + ?qs
+    // Ex local:  http://localhost:3001/api/manga?limit=12&includes[]=cover_art
+    // Ex Vercel: /api/proxy/manga?limit=12&includes[]=cover_art
+    const qs = buildQs(params);
+    const url = base + path + (qs ? '?' + qs : '');
     const res = await fetch(url, { headers: { Accept: 'application/json' } });
     if (!res.ok) throw new Error('API ' + res.status);
     return res.json();

@@ -1,5 +1,3 @@
-// Vercel Serverless Function — proxy para MangaDex
-// Rota: /api/proxy?path=/manga&limit=12&...
 const https = require('https');
 
 module.exports = (req, res) => {
@@ -8,27 +6,36 @@ module.exports = (req, res) => {
   res.setHeader('Access-Control-Allow-Headers', 'Accept, Content-Type');
   if (req.method === 'OPTIONS') { res.status(204).end(); return; }
 
-  // Pega o path e os demais query params
-  const url = new URL(req.url, 'http://localhost');
-  const apiPath = url.searchParams.get('path') || '/manga';
-  url.searchParams.delete('path');
-  const qs = url.searchParams.toString();
-  const target = `https://api.mangadex.org${apiPath}${qs ? '?' + qs : ''}`;
+  // Extrai o caminho da API a partir do req.url
+  const raw = req.url;
+  const withoutPrefix = raw.replace(/^\/api\/proxy/, '');
+  const qmark = withoutPrefix.indexOf('?');
+  const apiPath = qmark === -1 ? withoutPrefix : withoutPrefix.slice(0, qmark);
 
-  const options = {
-    headers: {
-      'Accept': 'application/json',
-      'User-Agent': 'MangaKaizoku/1.0 (vercel)',
-    },
-  };
+  // Usa req.query (parsed pelo runtime da Vercel) para evitar problemas com [] na URL
+  // filtrando o parâmetro "path" que vem do rewrite :path*
+  const parts = [];
+  const query = req.query || {};
+  for (const k of Object.keys(query)) {
+    if (k === 'path') continue;
+    const val = query[k];
+    const vals = Array.isArray(val) ? val : [val];
+    // Preserva notação [] para parâmetros de array
+    const key = k.endsWith('[]') ? k : vals.length > 1 ? k + '[]' : k;
+    vals.forEach(v => parts.push(key + '=' + encodeURIComponent(v)));
+  }
+  const qs = parts.join('&');
 
-  const proxy = https.get(target, options, (apiRes) => {
+  const target = 'https://api.mangadex.org' + apiPath + (qs ? '?' + qs : '');
+  console.log('[proxy]', target.slice(0, 150));
+
+  https.get(target, {
+    headers: { Accept: 'application/json', 'User-Agent': 'MangaKaizoku/1.0' }
+  }, apiRes => {
     res.setHeader('Content-Type', 'application/json');
     res.status(apiRes.statusCode);
     apiRes.pipe(res);
-  });
-
-  proxy.on('error', (e) => {
-    res.status(502).json({ error: e.message, target });
+  }).on('error', e => {
+    res.status(502).json({ error: e.message });
   });
 };
