@@ -702,3 +702,126 @@ body.reader-mode{padding-top:0;overflow:hidden}
 /* ── MISC ──────────────────────────────────────────── */
 .home-section-inner{max-width:1320px;margin:0 auto}
 .divider{height:1px;background:linear-gradient(90deg,transparent,var(--border-2),transparent);margin:28px 0}
+
+/* ===== SPLASH SCREEN ===== */
+.splash {
+  position: fixed;
+  inset: 0;
+  background: #07070d;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  transition: opacity 0.6s ease, visibility 0.6s ease;
+}
+.splash.hide {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.splash-ship {
+  animation: splashFloat 2s ease-in-out infinite;
+  filter: drop-shadow(0 8px 24px rgba(201,168,76,0.4));
+}
+@keyframes splashFloat {
+  0%, 100% { transform: translateY(0px) rotate(-1deg); }
+  50%       { transform: translateY(-10px) rotate(1deg); }
+}
+.splash-title {
+  font-family: 'Cinzel', 'Palatino Linotype', Palatino, serif;
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  background: linear-gradient(135deg, #e8c96a, #c9a84c, #c8302a);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.splash-sub {
+  font-size: 11px;
+  letter-spacing: 4px;
+  color: #c9a84c;
+  opacity: 0.7;
+  font-family: 'Shippori Mincho', Georgia, serif;
+}
+.splash-bar-wrap {
+  width: 140px;
+  height: 2px;
+  background: rgba(201,168,76,0.15);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+.splash-bar {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #c9a84c, #c8302a);
+  border-radius: 2px;
+  animation: splashLoad 1.8s ease-out forwards;
+}
+@keyframes splashLoad {
+  0%   {
+# Splash screen logo após o <body>
+sed -i 's|<!-- TOPBAR -->|<!-- SPLASH SCREEN -->
+<div class="splash" id="splash">
+  <div class="splash-waves">
+    <svg viewBox="0 0 1440 120" fill="none">
+      <path d="M0 60 Q180 0 360 60 Q540 120 720 60 Q900 0 1080 60 Q1260 120 1440 60 Q1620 0 1800 60 Q1980 120 2160 60 Q2340 0 2520 60 Q2700 120 2880 60 V120 H0Z" fill="#c9a84c"/>
+    </svg>
+  </div>
+  <svg class="splash-ship" width="100" height="80" viewBox="0 0 48 36" fill="none">
+    <path d="M5 22 Q24 30 43 22 L40 27 Q24 35 8 27 Z" fill="#c8302a"/>
+    <rect x="7" y="19" width="34" height="3.5" rx="1" fill="#c9a84c"/>
+    <line x1="24" y1="3" x2="24" y2="20" stroke="#c9a84c" stroke-width="1.8" stroke-linecap="round"/>
+    <line x1="14" y1="9" x2="34" y2="9" stroke="#c9a84c" stroke-width="1.2" stroke-linecap="round"/>
+    <path d="M24 4 L36 9 L36 18 L24 20 Z" fill="#e8e6df" opacity="0.88"/>
+    <path d="M13 10 L22 12 L22 19 L13 20 Z" fill="#e8e6df" opacity="0.7"/>
+    <path d="M24 3 L24 6 L29 4.5 Z" fill="#c8302a"/>
+    <circle cx="16" cy="23" r="1.2" fill="#c9a84c" opacity="0.6"/>
+    <circle cx="24" cy="24" r="1.2" fill="#c9a84c" opacity="0.6"/>
+    <circle cx="32" cy="23" r="1.2" fill="#c9a84c" opacity="0.6"/>
+  </svg>
+  <div class="splash-title">MangaKaizoku</div>
+  <div class="splash-sub">海賊漫画</div>
+  <div class="splash-bar-wrap"><div class="splash-bar"></div></div>
+</div>
+
+<!-- TOPBAR -->|' index.html
+sed -i 's|<script src="assets/js/store.js"></script>|<script>
+  // Splash: some após 2.2s
+  window.addEventListener("DOMContentLoaded", function() {
+    setTimeout(function() {
+      var s = document.getElementById("splash");
+      if (s) s.classList.add("hide");
+      setTimeout(function() { if (s) s.remove(); }, 650);
+    }, 2200);
+  });
+</script>
+<script src="assets/js/store.js"></script>|' index.html
+sed -i "s|<div class=\"hero\">|<div class=\"home-banner\" id=\"homeBanner\">
+      <div class=\"banner-particles\" id=\"bannerParticles\"></div>
+      <div class=\"banner-content\">
+        <div class=\"banner-eyebrow\">Piratas \&amp; Samurais</div>
+        <h1 class=\"banner-title\">Sua tripulacao de<br><span>mangas favoritos</span></h1>
+        <p class=\"banner-desc\">Explore milhares de obras. Do shonen ao seinen — navegue sem limites.</p>
+      </div>
+    </div>
+    <div class=\"hero\">|" ~/Documentos/manga\ web/manga-web/public/assets/js/app.js
+cat >> ~/Documentos/manga\ web/manga-web/public/assets/js/app.js << 'EOF'
+
+// Partículas decorativas no banner
+function initBannerParticles() {
+  const wrap = document.getElementById('bannerParticles');
+  if (!wrap) return;
+  for (let i = 0; i < 18; i++) {
+    const s = document.createElement('span');
+    s.style.left = Math.random() * 100 + '%';
+    s.style.animationDuration = (3 + Math.random() * 5) + 's';
+    s.style.animationDelay = (Math.random() * 4) + 's';
+    s.style.width = s.style.height = (1 + Math.random() * 2) + 'px';
+    wrap.appendChild(s);
+  }
+}
+document.addEventListener('DOMContentLoaded', initBannerParticles);
